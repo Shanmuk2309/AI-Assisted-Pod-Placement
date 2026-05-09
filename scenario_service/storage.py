@@ -42,16 +42,24 @@ def get_unprocessed_scenarios():
     return [s.data for s in scenarios]
 
 def mark_scenarios_processed(scenario_ids):
+
     db = SessionLocal()
 
-    scenarios = (
-        db.query(Scenario)
-        .filter(Scenario.scenario_id.in_(scenario_ids))
-        .all()
-    )
+    batch_size = 500
 
-    for s in scenarios:
-        s.processed = True
+    for i in range(0, len(scenario_ids), batch_size):
 
-    db.commit()
+        batch = scenario_ids[i:i + batch_size]
+
+        scenarios = (
+            db.query(Scenario)
+            .filter(Scenario.scenario_id.in_(batch))
+            .all()
+        )
+
+        for s in scenarios:
+            s.processed = True
+
+        db.commit()
+
     db.close()

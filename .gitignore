@@ -1,1 +1,52 @@
-venv
+```gitignore
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+# Virtual environment
+venv/
+.env/
+
+# Dataset files
+data/
+*.csv
+*.parquet
+
+# Ray
+ray_results/
+*.ray
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Kubernetes
+*.yaml.bak
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# SQLite
+scenarios.db
+
+# Docker
+*.tar
+
+# Temporary files
+tmp/
+temp/
+```

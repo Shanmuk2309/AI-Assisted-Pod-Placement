@@ -28,6 +28,7 @@ def generate_dataset_parallel():
     os.makedirs("data", exist_ok=True)
     df.to_csv("data/dataset.csv", index=False)
     print("Dataset saved successfully")
+    print(f"Total rows generated: {len(df)}")
 
     scenario_ids = [s["scenario_id"] for s in scenarios]
     mark_scenarios_processed(scenario_ids)
