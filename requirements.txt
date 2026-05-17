@@ -4,3 +4,6 @@ sqlalchemy
 ray
 numpy
 pandas
+kfp
+scikit-learn
+joblib

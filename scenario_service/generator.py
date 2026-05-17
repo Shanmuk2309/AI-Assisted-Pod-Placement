@@ -107,7 +107,7 @@ def generate_scenario(difficulty="medium"):
 
     return {
         "scenario_id": str(uuid.uuid4()),
-        "difficulty": difficulty,   # ✅ added
+        "difficulty": difficulty,
         "nodes": nodes,
         "latency_matrix": latency_matrix,
         "workload": workload
