@@ -1,52 +1,104 @@
-```gitignore
+# =========================
 # Python
+# =========================
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
-*.db
+*.so
 
-# Virtual environment
+# Virtual environments
 venv/
 .env/
+.venv/
 
-# Dataset files
-data/
-*.csv
-*.parquet
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
 
-# Ray
-ray_results/
-*.ray
-
+# =========================
 # Jupyter
+# =========================
 .ipynb_checkpoints/
 
+# =========================
 # VSCode
+# =========================
 .vscode/
 
-# OS files
+# =========================
+# OS Files
+# =========================
 .DS_Store
 Thumbs.db
 
+# =========================
 # Logs
+# =========================
 *.log
 
-# Kubernetes
-*.yaml.bak
-
-# Build files
+# =========================
+# Build / Distribution
+# =========================
 build/
 dist/
 *.egg-info/
 
-# SQLite
-scenarios.db
+# =========================
+# Pytest / Coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
 
+# =========================
+# Ray
+# =========================
+ray_results/
+
+# =========================
+# Kubeflow Artifacts
+# =========================
+kubeflow_pipeline/artifacts/
+
+# =========================
+# Model Files
+# =========================
+*.pkl
+*.joblib
+*.onnx
+
+# =========================
+# MinIO Local Storage
+# =========================
+minio-data/
+
+# =========================
+# Database Files
+# =========================
+*.db
+*.sqlite3
+
+# =========================
+# Dataset Files
+# =========================
+data/raw/*.csv
+data/raw/*.jsonl
+data/processed/*
+
+# Keep folder structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# =========================
 # Docker
+# =========================
 *.tar
 
-# Temporary files
+# =========================
+# Temporary Files
+# =========================
 tmp/
 temp/
-```

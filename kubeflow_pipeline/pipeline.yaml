@@ -1,0 +1,28 @@
+# PIPELINE DEFINITION
+# Name: pod-placement-training-pipeline
+components:
+  comp-train-component:
+    executorLabel: exec-train-component
+deploymentSpec:
+  executors:
+    exec-train-component:
+      container:
+        args:
+        - train.py
+        command:
+        - python
+        image: pod-placement-trainer:v10
+pipelineInfo:
+  name: pod-placement-training-pipeline
+root:
+  dag:
+    tasks:
+      train-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-component
+        taskInfo:
+          name: Train Placement Model
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.16.1
