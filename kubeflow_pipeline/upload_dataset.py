@@ -23,8 +23,8 @@ if not client.bucket_exists("models"):
 
 client.fput_object(
     "datasets",
-    "dataset_small.csv",
-    "../data/dataset_small.csv"
+    "dataset.csv",
+    "../data/dataset.csv"
 )
 
 print("Dataset uploaded successfully")
