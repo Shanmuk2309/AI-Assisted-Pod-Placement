@@ -7,19 +7,13 @@ client = Minio(
     secure=False
 )
 
-# =========================
-# CREATE BUCKETS
-# =========================
-
 if not client.bucket_exists("datasets"):
     client.make_bucket("datasets")
 
 if not client.bucket_exists("models"):
     client.make_bucket("models")
 
-# =========================
-# UPLOAD DATASET
-# =========================
+
 
 client.fput_object(
     "datasets",

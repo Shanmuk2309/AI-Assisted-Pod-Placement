@@ -91,21 +91,10 @@ features = [
 
 X = df[features]
 
-# =========================
-# TARGET
-# =========================
-
 y = df["score"]
 
-# =========================
-# SCENARIO IDS
-# =========================
 
 scenario_ids = df["scenario_id"]
-
-# =========================
-# TRAIN TEST SPLIT
-# =========================
 
 X_train, X_test, y_train, y_test, scenario_train, scenario_test = train_test_split(
     X,
@@ -118,9 +107,6 @@ X_train, X_test, y_train, y_test, scenario_train, scenario_test = train_test_spl
 print(f"Train rows: {len(X_train)}")
 print(f"Test rows: {len(X_test)}")
 
-# =========================
-# MODEL
-# =========================
 
 print("Training model...")
 
@@ -131,23 +117,14 @@ model = RandomForestRegressor(
     n_jobs=-1
 )
 
-# =========================
-# TRAIN
-# =========================
 
 model.fit(X_train, y_train)
 
-# =========================
-# PREDICTIONS
-# =========================
 
 print("Generating predictions...")
 
 predictions = model.predict(X_test)
 
-# =========================
-# RMSE
-# =========================
 
 rmse = mean_squared_error(
     y_test,
@@ -156,9 +133,7 @@ rmse = mean_squared_error(
 
 print(f"RMSE: {rmse:.4f}")
 
-# =========================
-# TOP-1 AGREEMENT
-# =========================
+
 
 results_df = pd.DataFrame({
     "scenario_id": scenario_test.values,
@@ -203,9 +178,6 @@ top1_agreement = matches / total
 
 print(f"Top-1 Agreement: {top1_agreement:.4f}")
 
-# =========================
-# SAVE METRICS FOR KUBEFLOW
-# =========================
 
 metrics = {
     "rmse": float(rmse),
@@ -219,9 +191,6 @@ with open("/tmp/metrics.json", "w") as f:
 
 print("Metrics saved")
 
-# =========================
-# SAVE MODEL
-# =========================
 
 os.makedirs("artifacts", exist_ok=True)
 
@@ -235,9 +204,6 @@ joblib.dump(
 
 print("Model saved locally")
 
-# =========================
-# UPLOAD MODEL TO MINIO
-# =========================
 
 client.fput_object(
     "models",
