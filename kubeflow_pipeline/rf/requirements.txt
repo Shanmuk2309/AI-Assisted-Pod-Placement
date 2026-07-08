@@ -4,3 +4,4 @@ scikit-learn
 joblib
 minio
 kfp==2.15.0
+xgboost
