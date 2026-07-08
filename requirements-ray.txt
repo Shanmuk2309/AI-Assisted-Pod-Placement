@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+
+pandas
+numpy
+scikit-learn
+joblib
+sqlalchemy
+requests
+
+minio
+
+python-dotenv
+aiohttp
+prometheus-client
