@@ -100,3 +100,5 @@ secret*.yaml
 # ==================================
 *.tmp
 *.temp
+
+frontend/node_modules/
