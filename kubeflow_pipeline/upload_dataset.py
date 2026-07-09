@@ -7,7 +7,6 @@ client = Minio(
     secure=False
 )
 
-
 if not client.bucket_exists("datasets"):
     client.make_bucket("datasets")
 
