@@ -1,7 +1,9 @@
-import ray
-import pandas as pd
 import os
 import json
+import ray
+import pandas as pd
+
+from minio import Minio
 
 from scenario_service.storage import (
     get_unprocessed_scenarios,
@@ -11,80 +13,143 @@ from scenario_service.storage import (
 from ray_evaluator.ray_tasks import process_scenario
 
 
+# =====================================================
+# RAY CONFIGURATION
+# =====================================================
+
+RAY_ADDRESS = os.getenv(
+    "RAY_ADDRESS",
+    "ray://localhost:10001"
+)
+
+
+# =====================================================
+# MINIO CONFIGURATION
+# =====================================================
+
+client = Minio(
+    "localhost:9000",
+    access_key="minioadmin",
+    secret_key="minioadmin",
+    secure=False
+)
+
+
+# =====================================================
+# DATASET GENERATION
+# =====================================================
+
 def generate_dataset_parallel():
 
-    print("\n=== DATASET GENERATION STARTED ===")
+    print("\n====================================")
+    print("Connecting to Ray Cluster...")
+    print("====================================")
 
-    ray.init(ignore_reinit_error=True)
+    ray.init(
+        address=RAY_ADDRESS,
+        ignore_reinit_error=True
+    )
+
+    print("Connected Successfully!")
+
+    print("\nCluster Resources:")
+    print(ray.cluster_resources())
 
     scenarios = get_unprocessed_scenarios()
 
     if not scenarios:
+        print("No unprocessed scenarios found.")
+        ray.shutdown()
+
         return {
-            "message": "No unprocessed scenarios found"
+            "message": "No unprocessed scenarios found."
         }
 
-    print(f"Scenarios fetched: {len(scenarios)}")
+    print(f"\nLoaded {len(scenarios)} scenarios.")
 
-    # Parallel execution
-    futures = [process_scenario.remote(sc) for sc in scenarios]
+    batch_size = 500
 
-    print("Running parallel Ray evaluation...")
+    all_rows = []
 
-    results = ray.get(futures)
+    for start in range(0, len(scenarios), batch_size):
 
-    print("Ray evaluation completed")
+        end = min(start + batch_size, len(scenarios))
 
-    # Flatten rows
-    all_rows = [
-        row
-        for sublist in results
-        for row in sublist
-    ]
+        print(f"\nProcessing scenarios {start} - {end}")
 
-    print(f"Total rows generated: {len(all_rows)}")
+        batch = scenarios[start:end]
 
-    # Create data directory
-    os.makedirs("data", exist_ok=True)
+        futures = [
+            process_scenario.remote(scenario)
+            for scenario in batch
+        ]
 
-    # =========================
-    # SAVE CSV
-    # =========================
+        results = ray.get(futures)
+
+        for rows in results:
+            all_rows.extend(rows)
+
+        print(f"Completed {end}/{len(scenarios)} scenarios.")
+
+    print("\nCreating DataFrame...")
+
     df = pd.DataFrame(all_rows)
+
+    os.makedirs("data", exist_ok=True)
 
     csv_path = "data/dataset.csv"
 
-    df.to_csv(csv_path, index=False)
-
-    print(f"CSV dataset saved: {csv_path}")
-
-    # =========================
-    # SAVE JSONL
-    # =========================
     jsonl_path = "data/dataset.jsonl"
+
+    print("Saving CSV...")
+
+    df.to_csv(
+        csv_path,
+        index=False
+    )
+
+    print("Saving JSONL...")
 
     with open(jsonl_path, "w") as f:
 
         for row in all_rows:
+
             f.write(json.dumps(row) + "\n")
 
-    print(f"JSONL dataset saved: {jsonl_path}")
+    print("\nUploading dataset to MinIO...")
 
-    # =========================
-    # MARK PROCESSED
-    # =========================
-    scenario_ids = [
-        s["scenario_id"]
-        for s in scenarios
-    ]
+    client.fput_object(
+        "datasets",
+        "dataset.csv",
+        csv_path
+    )
 
-    mark_scenarios_processed(scenario_ids)
+    client.fput_object(
+        "datasets",
+        "dataset.jsonl",
+        jsonl_path
+    )
 
-    print("Scenarios marked processed")
+    print("Upload completed.")
+
+    mark_scenarios_processed(
+        [
+            scenario["scenario_id"]
+            for scenario in scenarios
+        ]
+    )
+
+    print("Scenarios marked as processed.")
+
+    ray.shutdown()
+
+    print("\n====================================")
+    print("Dataset Generation Completed")
+    print("====================================")
 
     return {
         "rows_generated": len(all_rows),
-        "scenarios_used": len(scenarios),
         "csv_file": csv_path,
-        "jsonl_file": jsonl_path
+        "jsonl_file": jsonl_path,
+        "status": "SUCCESS"
     }

@@ -1,0 +1,69 @@
+apiVersion: ray.io/v1
+
+kind: RayCluster
+
+metadata:
+  name: raycluster
+  namespace: kuberay
+
+spec:
+
+  rayVersion: "2.9.3"
+
+  headGroupSpec:
+
+    serviceType: ClusterIP
+
+    rayStartParams:
+      dashboard-host: "0.0.0.0"
+
+    template:
+
+      spec:
+
+        containers:
+        - name: ray-head
+          image: pod-placement-ray:latest
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 6379
+            - containerPort: 8265
+            - containerPort: 10001
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+
+  workerGroupSpecs:
+
+  - replicas: 3
+
+    minReplicas: 3
+
+    maxReplicas: 6
+
+    groupName: workers
+
+    rayStartParams: {}
+
+    template:
+
+      spec:
+
+        containers:
+        - name: ray-worker
+          image: pod-placement-ray:latest
+          imagePullPolicy: Never
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"

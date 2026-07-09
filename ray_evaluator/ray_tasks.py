@@ -4,7 +4,7 @@ from scenario_service.features import extract_features
 from scenario_service.scorer import compute_score
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def process_scenario(scenario):
 
     rows = []
@@ -30,15 +30,13 @@ def process_scenario(scenario):
                 scenario
             )
 
-            row = {
+            rows.append({
                 "scenario_id": scenario["scenario_id"],
                 "difficulty": scenario["difficulty"],
                 "cu_node": cu_node,
                 "du_node": du_node,
                 **features,
                 "score": score
-            }
-
-            rows.append(row)
+            })
 
     return rows
