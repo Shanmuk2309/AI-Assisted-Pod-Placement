@@ -30,7 +30,7 @@ RAY_ADDRESS = os.getenv(
 client = Minio(
     "localhost:9000",
     access_key="minioadmin",
-    secret_key="minioadmin",
+    secret_key="minioadmin123",
     secure=False
 )
 
@@ -148,8 +148,9 @@ def generate_dataset_parallel():
     print("====================================")
 
     return {
-        "rows_generated": len(all_rows),
-        "csv_file": csv_path,
-        "jsonl_file": jsonl_path,
-        "status": "SUCCESS"
-    }
+    "status": "SUCCESS",
+    "rows_generated": len(all_rows),
+    "scenarios_used": len(scenarios),
+    "csv_file": csv_path,
+    "jsonl_file": jsonl_path,
+}

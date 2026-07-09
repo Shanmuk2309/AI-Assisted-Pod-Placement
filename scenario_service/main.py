@@ -11,6 +11,15 @@ from scenario_service.storage import (
 )
 
 app = FastAPI()
+dataset_status = {
+    "status": "idle",
+    "message": "Dataset has not been generated yet.",
+    "rows_generated": None,
+    "scenarios_used": None,
+    "csv_file": None,
+    "jsonl_file": None,
+    "error": None,
+}
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -68,15 +77,56 @@ def evaluate(scenario_id: str):
     
     return evaluate_scenario(scenario)
 
+def run_dataset_generation():
+    global dataset_status
+
+    dataset_status = {
+        "status": "running",
+        "message": "Generating dataset...",
+        "rows_generated": None,
+        "scenarios_used": None,
+        "csv_file": None,
+        "jsonl_file": None,
+        "error": None,
+    }
+
+    try:
+        result = generate_dataset_parallel()
+
+        dataset_status = {
+            "status": "completed",
+            "message": "Dataset generated successfully.",
+            "rows_generated": result.get("rows_generated"),
+            "scenarios_used": result.get("scenarios_used"),
+            "csv_file": result.get("csv_file"),
+            "jsonl_file": result.get("jsonl_file"),
+            "error": None,
+        }
+
+    except Exception as e:
+
+        dataset_status = {
+            "status": "failed",
+            "message": "Dataset generation failed.",
+            "rows_generated": None,
+            "scenarios_used": None,
+            "csv_file": None,
+            "jsonl_file": None,
+            "error": str(e),
+        }
 
 @app.post("/dataset/generate")
 def generate_dataset(background_tasks: BackgroundTasks):
 
-    background_tasks.add_task(generate_dataset_parallel)
+    background_tasks.add_task(run_dataset_generation)
 
     return {
         "message": "Dataset generation started"
     }
+
+@app.get("/dataset/status")
+def get_dataset_status():
+    return dataset_status
 
 from scenario_service.db import SessionLocal, Scenario
 
