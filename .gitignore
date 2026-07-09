@@ -100,3 +100,6 @@ secret*.yaml
 # ==================================
 *.tmp
 *.temp
+
+frontend/node_modules
+frontend/node_modules/is-binary-path/index.js
