@@ -25,4 +25,4 @@ root:
         taskInfo:
           name: Train XGBoost Model
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.16.1
+sdkVersion: kfp-2.15.0

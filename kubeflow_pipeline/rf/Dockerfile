@@ -1,9 +1,12 @@
-FROM python:3.10
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY . .
+COPY requirements.txt .
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "train.py"]
+COPY components ./components
+COPY pipeline.py .
+
+CMD ["bash"]
