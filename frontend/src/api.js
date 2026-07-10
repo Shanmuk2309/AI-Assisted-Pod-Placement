@@ -39,6 +39,13 @@ export async function listScenarios() {
   return handleResponse(response);
 }
 
+export async function clearScenarios() {
+  const response = await fetch(`${SCENARIO_API}/scenarios/clear`, {
+    method: "DELETE",
+  });
+  return handleResponse(response);
+}
+
 export async function recommendDataset(scenario) {
   const response = await fetch(`${SCENARIO_API}/dataset/recommend`, {
     method: "POST",
