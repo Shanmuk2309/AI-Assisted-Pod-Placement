@@ -30,7 +30,7 @@ RAY_ADDRESS = os.getenv(
 client = Minio(
     "localhost:9000",
     access_key="minioadmin",
-    secret_key="minioadmin123",
+    secret_key="minioadmin",
     secure=False
 )
 
@@ -67,7 +67,7 @@ def generate_dataset_parallel():
 
     print(f"\nLoaded {len(scenarios)} scenarios.")
 
-    batch_size = 500
+    batch_size = 300
 
     all_rows = []
 

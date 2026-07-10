@@ -8,7 +8,7 @@ MODEL_PATH = "model.pkl"
 client = Minio(
     "localhost:9000",
     access_key="minioadmin",
-    secret_key="minioadmin123",
+    secret_key="minioadmin",
     secure=False
 )
 

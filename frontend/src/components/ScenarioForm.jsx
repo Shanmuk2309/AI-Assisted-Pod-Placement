@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import {
   recommendBaseline,
+  recommendBaselineBody,
   recommendML,
-  recommendDataset,
+  recommendMLBody,
   listScenarios,
 } from "../api";
 import {
@@ -17,7 +18,9 @@ import {
 export default function ScenarioForm() {
   const [form, setForm] = useState(createDefaultScenario);
   const [savedScenarios, setSavedScenarios] = useState([]);
+  const [isGeneratedScenario, setIsGeneratedScenario] = useState(false);
   const [result, setResult] = useState(null);
+  const [compareResult, setCompareResult] = useState(null);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState("");
 
@@ -35,6 +38,7 @@ export default function ScenarioForm() {
       latency_matrix: scenario.latency_matrix,
       workload: scenario.workload,
     });
+    setIsGeneratedScenario(true);
     setResult(null);
     setError("");
   }
@@ -45,6 +49,7 @@ export default function ScenarioForm() {
       nodes[index] = { ...nodes[index], [field]: value };
       return { ...prev, nodes, latency_matrix: buildLatencyMatrix(nodes) };
     });
+    setIsGeneratedScenario(false);
   }
 
   function addNode() {
@@ -52,6 +57,7 @@ export default function ScenarioForm() {
       const nodes = [...prev.nodes, createDefaultNode(prev.nodes.length)];
       return { ...prev, nodes, latency_matrix: buildLatencyMatrix(nodes) };
     });
+    setIsGeneratedScenario(false);
   }
 
   function removeNode(index) {
@@ -60,6 +66,7 @@ export default function ScenarioForm() {
       const nodes = prev.nodes.filter((_, i) => i !== index);
       return { ...prev, nodes, latency_matrix: buildLatencyMatrix(nodes) };
     });
+    setIsGeneratedScenario(false);
   }
 
   function updateLatency(from, to, value) {
@@ -70,6 +77,7 @@ export default function ScenarioForm() {
         [from]: { ...prev.latency_matrix[from], [to]: Number(value) },
       },
     }));
+    setIsGeneratedScenario(false);
   }
 
   function updateWorkload(pod, field, value) {
@@ -80,6 +88,7 @@ export default function ScenarioForm() {
         [pod]: { ...prev.workload[pod], [field]: Number(value) },
       },
     }));
+    setIsGeneratedScenario(false);
   }
 
   function regenerateLatency() {
@@ -87,6 +96,7 @@ export default function ScenarioForm() {
       ...prev,
       latency_matrix: buildRandomLatencyMatrix(prev.nodes),
     }));
+    setIsGeneratedScenario(false);
   }
 
   function generateScenarioId() {
@@ -94,25 +104,33 @@ export default function ScenarioForm() {
       ...prev,
       scenario_id: crypto.randomUUID(),
     }));
+    setIsGeneratedScenario(false);
   }
 
   async function handleRecommend(method) {
     setLoading(method);
     setError("");
     setResult(null);
+    setCompareResult(null);
     try {
       const scenario = buildScenarioPayload(form);
       let data;
 
       if (method === "ml") {
-        data = await recommendML(scenario);
-        data.scenario = scenario;
-      } else if (method === "dataset") {
-        data = await recommendDataset(scenario);
+        if (isGeneratedScenario) {
+          data = await recommendML(form.scenario_id);
+        } else {
+          data = await recommendMLBody(scenario);
+        }
       } else {
-        data = await recommendBaseline(scenario);
+        if (isGeneratedScenario) {
+          data = await recommendBaseline(form.scenario_id);
+        } else {
+          data = await recommendBaselineBody(scenario);
+        }
       }
 
+      data.scenario = scenario;
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -121,8 +139,32 @@ export default function ScenarioForm() {
     }
   }
 
+  async function handleCompare() {
+    setLoading("compare");
+    setError("");
+    setResult(null);
+    setCompareResult(null);
+
+    try {
+      const scenario = buildScenarioPayload(form);
+      const [baselineData, mlData] = await Promise.all([
+        isGeneratedScenario ? recommendBaseline(form.scenario_id) : recommendBaselineBody(scenario),
+        isGeneratedScenario ? recommendML(form.scenario_id) : recommendMLBody(scenario),
+      ]);
+
+      setCompareResult({
+        baseline: { ...baselineData, scenario },
+        ml: { ...mlData, scenario },
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(null);
+    }
+  }
+
   const nodeNames = form.nodes.map((n) => n.name);
-  const displayScenario = result?.scenario || form;
+  const displayScenario = compareResult?.baseline?.scenario || result?.scenario || form;
 
   return (
     <div className="card">
@@ -357,12 +399,12 @@ export default function ScenarioForm() {
           ML Model
         </button>
         <button
-          onClick={() => handleRecommend("dataset")}
+          onClick={handleCompare}
           disabled={loading !== null}
-          className="btn-dataset flex-1"
+          className="btn-secondary flex-1"
         >
-          {loading === "dataset" ? <Spinner /> : <DatasetIcon />}
-          From Dataset
+          {loading === "compare" ? <Spinner /> : <CompareIcon />}
+          Compare Baseline vs ML
         </button>
       </div>
 
@@ -378,6 +420,48 @@ export default function ScenarioForm() {
           scenario={displayScenario}
         />
       )}
+
+      {compareResult && (
+        <CompareTable
+          baseline={compareResult.baseline}
+          ml={compareResult.ml}
+        />
+      )}
+    </div>
+  );
+}
+
+function CompareTable({ baseline, ml }) {
+  const rows = [
+    { label: "Score", baseline: baseline.score ?? baseline.predicted_score, ml: ml.score ?? ml.predicted_score },
+    { label: "CU placement", baseline: baseline.placement?.cu_node, ml: ml.placement?.cu_node },
+    { label: "DU placement", baseline: baseline.placement?.du_node, ml: ml.placement?.du_node },
+  ];
+
+  return (
+    <div className="mt-6 overflow-x-auto rounded-2xl bg-surface-700/50 border border-surface-600/40">
+      <div className="px-5 py-4 border-b border-surface-600/30 bg-surface-800/60">
+        <h3 className="font-display text-white text-lg font-semibold">Baseline vs ML Comparison</h3>
+        <p className="text-sm text-slate-400 mt-1">Compare final score and CU/DU node placements side-by-side.</p>
+      </div>
+      <table className="w-full text-sm text-left">
+        <thead>
+          <tr className="bg-surface-700/80 text-slate-400 uppercase text-xs tracking-wider">
+            <th className="px-4 py-3">Metric</th>
+            <th className="px-4 py-3">Baseline</th>
+            <th className="px-4 py-3">ML Model</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label} className="border-t border-surface-600/20">
+              <td className="px-4 py-4 text-slate-300 font-medium">{row.label}</td>
+              <td className="px-4 py-4 text-slate-100">{row.baseline ?? "—"}</td>
+              <td className="px-4 py-4 text-slate-100">{row.ml ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -554,6 +638,14 @@ function MLIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+    </svg>
+  );
+}
+
+function CompareIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M8 12h8M8 17h8M4 7h.01M4 12h.01M4 17h.01M20 7h.01M20 12h.01M20 17h.01" />
     </svg>
   );
 }

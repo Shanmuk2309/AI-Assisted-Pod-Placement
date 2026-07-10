@@ -48,7 +48,14 @@ export async function recommendDataset(scenario) {
   return handleResponse(response);
 }
 
-export async function recommendBaseline(scenario) {
+export async function recommendBaseline(scenarioId) {
+  const response = await fetch(
+    `${ADVISOR_API}/recommend/baseline/${scenarioId}`
+  );
+
+  return handleResponse(response);
+}
+export async function recommendBaselineBody(scenario) {
   const response = await fetch(`${ADVISOR_API}/recommend/baseline`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -57,11 +64,18 @@ export async function recommendBaseline(scenario) {
   return handleResponse(response);
 }
 
-export async function recommendML(scenario) {
+export async function recommendMLBody(scenario) {
   const response = await fetch(`${ADVISOR_API}/recommend/ml`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(scenario),
   });
+  return handleResponse(response);
+}
+export async function recommendML(scenarioId) {
+  const response = await fetch(
+    `${ADVISOR_API}/recommend/ml/${scenarioId}`
+  );
+
   return handleResponse(response);
 }
