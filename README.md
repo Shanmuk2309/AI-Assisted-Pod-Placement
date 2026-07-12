@@ -1,217 +1,352 @@
-# AI-Assisted Kubernetes Scheduler
-
-> Machine Learning--Driven Pod Placement Framework for Kubernetes
-
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
-![Kubeflow](https://img.shields.io/badge/Kubeflow-Pipelines-00599C?style=for-the-badge)
-![Ray](https://img.shields.io/badge/Ray-Distributed-028CF0?style=for-the-badge)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
-------------------------------------------------------------------------
+# AI-Assisted Pod Placement Advisor
 
 ## Overview
 
-AI-Assisted Kubernetes Scheduler is a research-oriented scheduling
-framework that explores how machine learning can augment Kubernetes
-scheduling decisions. The platform combines synthetic workload
-generation, feature engineering, distributed data processing, Kubeflow
-Pipelines, and predictive machine learning models to investigate
-intelligent pod placement strategies within Kubernetes clusters.
+AI-Assisted Pod Placement Advisor is a machine learning-based Kubernetes scheduling framework that recommends optimal placements for Cloud Unit (CU) and Distributed Unit (DU) workloads.
 
-The project follows a modular architecture that separates dataset
-generation, model training, inference, and deployment, making it
-suitable for experimentation with different scheduling algorithms and
-machine learning approaches.
+Instead of relying solely on a manually designed scoring function, the system learns scheduling behavior from simulated Kubernetes cluster scenarios and predicts the best placement using trained machine learning models. The project also provides a baseline heuristic scheduler for comparison.
 
-------------------------------------------------------------------------
+The complete workflow includes:
 
-## Objectives
+* Scenario generation
+* Feature extraction
+* Baseline scoring
+* Parallel dataset generation using Ray
+* Model training using Kubeflow Pipelines
+* Model storage in MinIO
+* ML-powered placement recommendations through FastAPI
 
--   Explore AI-assisted scheduling for Kubernetes.
--   Generate realistic synthetic scheduling datasets.
--   Train predictive placement models.
--   Evaluate ML-assisted scheduling against heuristic approaches.
--   Build a reproducible end-to-end ML workflow.
+---
 
-------------------------------------------------------------------------
+# Architecture
 
-## High-Level Architecture
-
-``` mermaid
-flowchart LR
-    A[Scenario Generator]
-    B[Feature Engineering]
-    C[Dataset]
-    D[MinIO]
-    E[Kubeflow Pipeline]
-    F[Ray Processing]
-    G[Model Training]
-    H[Inference]
-    I[Placement Recommendation]
-
-    A-->B
-    B-->C
-    C-->D
-    D-->E
-    E-->F
-    F-->G
-    G-->H
-    H-->I
+```
+                    +----------------------+
+                    | Scenario Generator   |
+                    +----------+-----------+
+                               |
+                               v
+                    +----------------------+
+                    | Scenario Database    |
+                    | (SQLite)             |
+                    +----------+-----------+
+                               |
+                               v
+                    +----------------------+
+                    | Ray Dataset Builder  |
+                    +----------+-----------+
+                               |
+                               v
+                    +----------------------+
+                    | Dataset (CSV/JSONL)  |
+                    +----------+-----------+
+                               |
+                               v
+                    +----------------------+
+                    | Kubeflow Pipeline    |
+                    | Random Forest / XGB  |
+                    +----------+-----------+
+                               |
+                               v
+                    +----------------------+
+                    | MinIO Model Storage  |
+                    +----------+-----------+
+                               |
+                               v
+                    +----------------------+
+                    | Advisor API          |
+                    | Baseline + ML        |
+                    +----------------------+
 ```
 
-------------------------------------------------------------------------
+---
 
-## Workflow
+# Features
 
-1.  Generate scheduling scenarios.
-2.  Extract infrastructure features.
-3.  Store datasets and artifacts.
-4.  Execute Kubeflow training pipeline.
-5.  Train machine learning model.
-6.  Persist trained model.
-7.  Perform placement inference.
-8.  Produce scheduling recommendations.
+* Synthetic Kubernetes cluster scenario generation
+* Configurable Easy, Medium and Hard workloads
+* Resource-aware placement scoring
+* Parallel dataset generation using Ray
+* Random Forest regression model
+* XGBoost regression model
+* Kubeflow Pipeline based model training
+* MinIO artifact storage
+* Baseline heuristic scheduler
+* ML-based scheduler
+* FastAPI REST APIs
+* SQLite scenario persistence
 
-------------------------------------------------------------------------
+---
 
-## Technology Stack
+# Project Structure
 
-  Category                 Technologies
-  ------------------------ -----------------------------
-  Programming              Python
-  Machine Learning         Scikit-learn, Random Forest
-  Orchestration            Kubernetes
-  Pipeline Orchestration   Kubeflow Pipelines
-  Distributed Processing   Ray
-  Storage                  MinIO
-  Containers               Docker
-  Version Control          Git & GitHub
-
-------------------------------------------------------------------------
-
-## Repository Structure
-
-``` text
-AI-Assisted-Pod-Placement/
-├── advisor/
-├── ml/
-├── kubeflow/
-├── manifests/
-├── scripts/
-├── data/
-├── Dockerfile
-├── requirements.txt
+```
+project/
+│
+├── advisor_api/
+│   ├── baseline.py
+│   ├── ml_predictor.py
+│   ├── model_loader.py
+│   ├── scenario_client.py
+│   └── main.py
+│
+├── scenario_service/
+│   ├── generator.py
+│   ├── features.py
+│   ├── scorer.py
+│   ├── storage.py
+│   ├── db.py
+│   └── main.py
+│
+├── ray_evaluator/
+│   ├── ray_tasks.py
+│   └── dataset_runner.py
+│
+├── trainer/
+│   ├── train.py
+│   ├── pipeline.py
+│   ├── pipeline.yaml
+│   └── requirements.txt
+│
+├── xgboost/
+│   ├── train.py
+│   ├── pipeline.py
+│   └── xgb_pipeline.yaml
+│
 └── README.md
 ```
 
-------------------------------------------------------------------------
+---
 
-## Machine Learning Pipeline
+# Workflow
 
--   Dataset generation
--   Data preprocessing
--   Feature engineering
--   Model training
--   Model serialization
--   Inference
--   Placement recommendation
+## Step 1 – Generate Scenarios
 
-The architecture has been designed to allow future integration of
-additional models such as XGBoost, Gradient Boosting, and Reinforcement
-Learning based schedulers.
+Synthetic Kubernetes cluster scenarios are generated with varying:
 
-------------------------------------------------------------------------
+* Number of nodes
+* CPU capacity
+* Memory capacity
+* Current utilization
+* Zones
+* Network latency
+* CU workload
+* DU workload
 
-## Representative Features
+Each scenario is categorized as:
 
--   CPU availability
--   Memory availability
--   CPU requests
--   Memory requests
--   Node utilization
--   Cluster load
--   Latency constraints
--   Placement locality
--   Resource violations
+* Easy
+* Medium
+* Hard
 
-------------------------------------------------------------------------
+---
 
-## Deployment
+## Step 2 – Feature Extraction
 
-``` bash
-git clone https://github.com/kaushikrit/AI-Assisted-Pod-Placement.git
+For every possible CU-DU placement, the following features are extracted:
 
-cd AI-Assisted-Pod-Placement
+* CPU free ratio
+* Memory free ratio
+* Resource violations
+* Network latency
+* Latency budget
+* Same node indicator
+* Same zone indicator
+* Cluster load
+* CPU balance
+* Memory balance
+* Workload requirements
 
-pip install -r requirements.txt
+---
+
+## Step 3 – Baseline Scoring
+
+A handcrafted scoring function evaluates every valid placement using:
+
+* Resource utilization
+* Capacity violations
+* Network latency
+* Same-node penalty
+* Cluster balance
+* Load imbalance
+* Same-zone bonus
+
+The placement with the lowest score is selected as the optimal placement.
+
+---
+
+## Step 4 – Parallel Dataset Generation
+
+Ray distributes scenario evaluation across multiple workers.
+
+Each scenario produces every possible:
+
+```
+CU Node
+×
+
+DU Node
 ```
 
-Deploy the required Kubernetes manifests and execute the Kubeflow
-pipelines according to your cluster configuration.
+combination.
 
-------------------------------------------------------------------------
+Generated datasets are exported as:
 
-## Screenshots
+* CSV
+* JSONL
 
-Add screenshots here when available.
+---
 
-``` text
-docs/images/
-├── architecture.png
-├── kubeflow-pipeline.png
-├── ray-dashboard.png
-├── model-training.png
-└── results.png
+## Step 5 – Model Training
+
+Kubeflow Pipelines execute containerized training jobs.
+
+Supported models:
+
+* Random Forest Regressor
+* XGBoost Regressor
+
+Training pipeline:
+
+1. Download dataset from MinIO
+2. Train model
+3. Evaluate performance
+4. Save metrics
+5. Upload trained model back to MinIO
+
+---
+
+## Step 6 – Prediction
+
+The Advisor API:
+
+1. Downloads the trained model from MinIO
+2. Generates features for every valid placement
+3. Predicts placement score
+4. Returns the placement with the minimum predicted score
+
+---
+
+# REST APIs
+
+## Scenario Service
+
+Generate scenarios
+
+```
+POST /scenarios/generate?count=100
 ```
 
-------------------------------------------------------------------------
+List scenarios
 
-## Roadmap
+```
+GET /scenarios
+```
 
--   Support additional ML models
--   Reinforcement learning scheduler
--   REST inference service
--   Improved evaluation metrics
--   Explainable AI
--   Multi-cluster experimentation
--   Enhanced observability
--   Dashboard integration
+Get scenario
 
-------------------------------------------------------------------------
+```
+GET /scenarios/{scenario_id}
+```
 
-## Design Principles
+Evaluate scenario
 
--   Modular architecture
--   Separation of concerns
--   Reproducible experiments
--   Scalable processing
--   Container-first deployment
--   Extensible ML workflow
+```
+GET /evaluate/{scenario_id}
+```
 
-------------------------------------------------------------------------
+Generate dataset
 
-## Project Status
+```
+POST /dataset/generate
+```
 
-This repository contains an actively evolving implementation of an
-AI-assisted scheduling framework. Development is ongoing with continued
-improvements to dataset generation, model evaluation, deployment
-workflows, and scheduling strategies.
+Clear scenarios
 
-------------------------------------------------------------------------
+```
+DELETE /scenarios/clear
+```
 
-## Notice
+---
 
-This repository contains project work developed as part of an academic
-and industry-sponsored initiative. Distribution or reuse of the source
-code should comply with the applicable institutional and project
-policies.
+## Advisor API
 
-------------------------------------------------------------------------
+Baseline recommendation
 
-## Authors
+```
+GET /recommend/baseline/{scenario_id}
+```
 
--   **Kaushik Reddy**
--   **Shanmuk**
--   **Thejeswar**
--   **Umesh**
+ML recommendation
+
+```
+GET /recommend/ml/{scenario_id}
+```
+
+---
+
+# Machine Learning Models
+
+## Random Forest
+
+* Ensemble regression model
+* Parallel tree construction
+* Robust against noisy synthetic data
+
+## XGBoost
+
+* Gradient boosting decision trees
+* Better generalization
+* Faster inference
+* Higher prediction accuracy
+
+---
+
+# Technologies Used
+
+* Python
+* FastAPI
+* Ray
+* Kubernetes
+* Kubeflow Pipelines
+* MinIO
+* Scikit-learn
+* XGBoost
+* SQLAlchemy
+* SQLite
+* Pandas
+* NumPy
+* Docker
+
+---
+
+# Future Improvements
+
+* Integration with a live Kubernetes cluster
+* Real scheduler plugin
+* Reinforcement Learning based placement
+* Multi-objective optimization
+* GPU-aware scheduling
+* Energy-aware scheduling
+* Online model retraining
+* Prometheus metrics integration
+* Grafana dashboard
+
+---
+
+# Authors
+
+**Kaushik Reddy**
+**Shanmuk**
+**Thejeswar**
+**B Umesh**
+
+Department of Computer Science and Engineering
+
+M. S. Ramaiah Institute of Technology
+
+---
+
+# License
+
+This project is developed for academic research and educational purposes.
