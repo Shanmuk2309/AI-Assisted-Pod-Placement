@@ -8,7 +8,7 @@ sqlalchemy
 requests
 joblib
 minio
-kfp
+kfp==2.14.4
 kfp-kubernetes
 prometheus-client
 python-dotenv
