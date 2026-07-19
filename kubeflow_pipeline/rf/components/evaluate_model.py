@@ -62,13 +62,13 @@ def evaluate_model(
     true_best = (
         results_df
         .groupby("scenario_id")["true_score"]
-        .idxmax()
+        .idxmin()
     )
 
     pred_best = (
         results_df
         .groupby("scenario_id")["predicted_score"]
-        .idxmax()
+        .idxmin()
     )
 
     true_best_rows = results_df.loc[true_best]
